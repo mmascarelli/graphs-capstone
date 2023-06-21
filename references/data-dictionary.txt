@@ -1,0 +1,17 @@
+train/annotations: Collection of JSON image annotations describing the figures.
+
+source: Whether generated or extracted.
+chart-type: One of dot, horizontal_bar, vertical_bar, line, scatter.
+plot-bb: Bounding box of the plot within the figure, given by height, width, x0, and y0.
+text/id: Identifier for a text item within the figure.
+text/polygon: Region bounding the text item in the image.
+text/text: The text itself.
+text/role: The function of the text in the image, whether chart_title, axis_title, tick_label, etc.
+axes/{x|y}-axis/ticks/id: Identifier matching the tick to the associated text element id.
+axes/{x|y}-axis/ticks/tick_pt: Coordinates of each tick in the figure.
+axes/{x|y}-axis/tick-type: The graphical depiction of the tick element.
+axes/{x|y}-axis/values-type: The data type of the values represented by the tick element, whether categorical or numerical. This field determines how the predicted data series are scored. See the Evaluation page for more information.
+visual-elements: Indicates part of figure representing the data series. Depends on the chart type.
+data-series/{x|y}: The x and y coordinates of values depicted in the figure. For the test set images, this is the target to be predicted.
+
+train/images: Collection of figures in JPG format to be used as training data.
