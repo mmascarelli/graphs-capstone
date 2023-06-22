@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import json
 import easyocr
+from scipy import stats
 
 def clean_data_series(plot_index):
        
@@ -54,11 +55,16 @@ def get_lines(image_path):
     # Load the scatterplot image
     scatter_image = cv2.imread(image_path)
 
+    # If the image has a dark background, we will apply bitwise_not
+    dark_image = has_dark_background(image_path, 50)
+    if dark_image == True:
+        scatter_image = cv2.bitwise_not(scatter_image)
+
     # Convert the image to grayscale
     gray_image = cv2.cvtColor(scatter_image, cv2.COLOR_BGR2GRAY)
 
     # Perform edge detection using the Canny algorithm
-    edges = cv2.Canny(gray_image, 100, 200)
+    edges = cv2.Canny(gray_image, 50, 150)
 
     # Perform Hough line detection to detect the lines in the image
     lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
@@ -99,6 +105,80 @@ def get_title_bbox(image_path):
 
 
 
+def get_yticks(image_path):
+    scatter_image = cv2.imread(image_path)
+    gray_image = cv2.cvtColor(scatter_image, cv2.COLOR_BGR2GRAY)
+    
+    # Take 1/5 of the image on the left side
+    left_region = int(gray_image.shape[1]/5)
+    results = reader.readtext(gray_image[:,:left_region])
+    
+    # Only take results with more 90% confidence
+    filtered_results = [result for result in results if result[2] > 0.70]
+    
+    # Greatest x-coordinate for the text, will be used as a left bound for axis/point detection
+    left_bound = filtered_results[0][0][1][0]
+
+    # Loop through results to extract predicted text
+    y_ticks = []
+    for i in range(len(filtered_results)):
+        y = filtered_results[i][1]
+        if y.find(',') > 0:
+            y = y.replace(',','.')
+        y_ticks.append(y)
+
+    # Convert the text to integers
+    y_ticks = [float(num) for num in y_ticks]
+
+    # Calculate the first and third quartiles
+    q1, q3 = np.percentile(y_ticks, [25, 75])
+
+    # Calculate the interquartile range (IQR)
+    iqr = q3 - q1
+
+    # Define the threshold as a certain percentage (e.g., 1.5 times) of the IQR
+    threshold = 1.5  # Adjust this value as needed
+
+    # Filter out numbers beyond the threshold
+    y_ticks = [num for num in y_ticks if q1 - threshold * iqr <= num <= q3 + threshold * iqr]
+
+    y_ticks = sorted(y_ticks)
+
+    return y_ticks, left_bound
+
+
+
+
+
+def get_xticks(image_path):
+
+    scatter_image = cv2.imread(image_path) 
+    gray_image = cv2.cvtColor(scatter_image, cv2.COLOR_BGR2GRAY)
+    lower_region = int(gray_image.shape[0] - gray_image.shape[0]/5)
+    results = reader.readtext(gray_image[lower_region:,:])
+
+    filtered_results = [result for result in results if result[2] > 0.9] 
+    
+    lower_bound = lower_region + results[0][0][0][1]
+
+    x_ticks = []
+    for i in range(len(filtered_results)):
+        x = filtered_results[i][1]
+        x_ticks.append(x)
+
+    xticks = []
+    for num in x_ticks:
+        try:
+            xticks.append(int(num))
+        except ValueError:
+            pass
+
+    return xticks, lower_bound
+
+
+
+
+
 
 
 def get_axes(image_path, show_plot=True):
@@ -116,10 +196,18 @@ def get_axes(image_path, show_plot=True):
 
     # Load the scatterplot image
     scatter_image = cv2.imread(image_path) 
+    
+    # If the image has a dark background, we will apply bitwise_not
+    dark_image = has_dark_background(image_path, 50)
+    if dark_image == True:
+        scatter_image = cv2.bitwise_not(scatter_image)
+
     # Convert the image to grayscale
     gray_image = cv2.cvtColor(scatter_image, cv2.COLOR_BGR2GRAY)   
+
     # Perform edge detection using the Canny algorithm
     edges = cv2.Canny(gray_image, 50, 150) 
+
     # Perform Hough line detection to detect the lines in the image
     lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
 
@@ -139,20 +227,28 @@ def get_axes(image_path, show_plot=True):
 
         # Calculate the length of the line
         line_length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+        # The x-axis should be 4/5 the length of the image x length
+        x_axis_line_thresh = 4*(scatter_image.shape[1]/5)
+
+        # The y-axis should be 4/5 the length of the image y length
+        y_axis_line_thresh = 4*(scatter_image.shape[0]/5)
+
         # Restricting the line length and location of the line to above x-label and to the right of the y-label
         if line_length > 150 and y2 < scatter_image.shape[0]-20 and x2 > 20:
 
             # Check if the line is horizontal
-            if abs(y2 - y1) < 5 and y1 > highest_y:
+            if abs(y2 - y1) < 5 and y1 > highest_y and line_length > x_axis_line_thresh:
                 highest_y = y1
                 x_axis = line
 
             # Check if the line is vertical
-            if abs(x2 - x1) < 5 and x1 < smallest_x:
+            if abs(x2 - x1) < 5 and x1 < smallest_x and y_axis_line_thresh:
                 smallest_x = x1
                 y_axis = line
 
     if show_plot == True:
+        scatter_image = cv2.imread(image_path)
         # Extract coordinates for x_axis
         x1, y1, x2, y2 = x_axis[0]
 
@@ -176,7 +272,7 @@ def get_axes(image_path, show_plot=True):
 
 
 
-def get_points(image_path, x_axis, y_axis, show_plot=True, show_transformations=False):
+def get_points(image_path, x_axis, y_axis, num_points, show_plot=True, show_transformations=False):
     """
     Extract the bounding boxes of the data points from a scatterplot image.
 
@@ -195,6 +291,11 @@ def get_points(image_path, x_axis, y_axis, show_plot=True, show_transformations=
     
     # Load the scatterplot image
     scatter_image = cv2.imread(image_path)
+
+    # If the image has a dark background, we will apply bitwise_not
+    dark_image = has_dark_background(image_path, 50)
+    if dark_image == True:
+        scatter_image = cv2.bitwise_not(scatter_image)
 
     # Convert the image to grayscale
     gray_image = cv2.cvtColor(scatter_image, cv2.COLOR_BGR2GRAY)
@@ -215,7 +316,7 @@ def get_points(image_path, x_axis, y_axis, show_plot=True, show_transformations=
 
     
     # Try different cutoff points for contour area
-    cutoff_points = [20,30,40,50,60,70,80,90,100]
+    cutoff_points = [10,20,30,40,50,60,70,80,90,100,150,200,300,350,400]
 
     # Iterate over each contour area cutoff point
     for cutoff in cutoff_points:
@@ -233,11 +334,13 @@ def get_points(image_path, x_axis, y_axis, show_plot=True, show_transformations=
                 if x > y_axis[0][0]  and y < y_axis[0][1] and y < x_axis[0][1] and y > upper_bound and x > 20: 
                     bounding_boxes.append((x, y, x + w, y + h))  # (xmin, ymin, xmax, ymax)
         # Stop the loop if at least 10 points are found, but less than 30 points       
-        if len(bounding_boxes) > 10 and len(bounding_boxes) < 30:
+        if len(bounding_boxes) == num_points:
             break
+
 
     # For showing the plot with bboxes         
     if show_plot == True:
+        scatter_image = cv2.imread(image_path)
         for bbox in bounding_boxes:
             x1, y1, x2, y2 = bbox
             cv2.rectangle(scatter_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -276,6 +379,21 @@ def get_points(image_path, x_axis, y_axis, show_plot=True, show_transformations=
     
     
 
+def has_dark_background(image_path, brightness_threshold=50):
+    # Load the image
+    image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+
+    # Convert the image to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Calculate the average brightness of the image
+    average_brightness = np.mean(gray) * 100 / 255
+
+    # Compare the average brightness with the threshold
+    if average_brightness <= brightness_threshold:
+        return True  # Dark background
+    else:
+        return False  # Bright background
 
 
 
