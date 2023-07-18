@@ -1,2 +1,3 @@
 data/
 src/extract_data/__pycache__/
+.DS_Store
