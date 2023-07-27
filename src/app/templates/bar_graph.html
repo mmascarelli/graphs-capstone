@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Barplot Graph</title>
+    <!-- Include Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Barplot</h1>
+    <p>Original Image</p>
+    <img src="data:image/jpeg;base64,{{ image_base64 }}" alt="Bar Plot">
+
+
+
+    <!-- Add a container for the Plotly bar plot -->
+    <div id="bar-plot"></div>
+
+    
+    <h2>Barplot Data</h2>
+    {% if bar_data_table %}
+        {{ bar_data_table|safe }}
+    {% else %}
+        <p>No bar data available.</p>
+    {% endif %}
+
+
+
+    <br><br>
+    <a href="/">Back to Homepage</a>
+    <script>
+        // Get the bar data from the HTML template
+        var bar_data = {{ bar_data.to_dict(orient="records") | safe }};
+        // Extract xlabels and bar heights from the bar data
+        var x_labels = bar_data.map(function(item) { return item.xlabel; });
+        var bar_heights = bar_data.map(function(item) { return item.bar_height_pred; });
+        // Create a Plotly bar plot
+        var bar_trace = {
+            x: x_labels,
+            y: bar_heights,
+            type: 'bar'
+        };
+        var layout = {
+            title: '{{ title }}',  // Use the provided title
+            xaxis: { title: '{{ xlabel }}' },  // Use the provided xlabel
+            yaxis: { title: '{{ ylabel }}' }   // Use the provided ylabel
+        };
+        var data = [bar_trace];
+        Plotly.newPlot('bar-plot', data, layout);
+    </script>
+</body>
+</html>

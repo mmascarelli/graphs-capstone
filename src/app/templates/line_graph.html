@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Line Plot Graph</title>
+    <!-- Include Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+
+
+    <h1>Lineplot</h1>
+    <p>Original Image</p>
+    <img src="data:image/jpeg;base64,{{ image_base64 }}" alt="Line Plot">
+
+
+    
+    <div id="line-plot"></div>
+    <p>Lineplot Data</p>
+    {% if line_data_table %}
+        {{ line_data_table|safe }}
+    {% else %}
+        <p>No line data available.</p>
+    {% endif %}
+    <br><br>
+    <a href="/">Back to Homepage</a>
+
+  
+
+
+    <script>
+        // Get the line data from the HTML template
+        var line_data = {{ line_data.to_dict(orient="records") | safe }};
+        // Extract x and y coordinates from the line data
+        var x_labels = line_data.map(function(item) { return item.xlabel; });
+        var y_data = line_data.map(function(item) { return item.point_pred; });
+        // Create a Plotly line plot
+        var line_trace = {
+            x: x_labels,
+            y: y_data,
+            type: 'line'
+        };
+        var layout = {
+            title: '{{ title }}',  // Use the provided title
+            xaxis: { title: '{{ xlabel }}' },  // Use the provided xlabel
+            yaxis: { title: '{{ ylabel }}' }   // Use the provided ylabel
+        };
+        var data = [line_trace];
+        Plotly.newPlot('line-plot', data, layout);
+    </script>
+
+
+
+</body>
+</html>

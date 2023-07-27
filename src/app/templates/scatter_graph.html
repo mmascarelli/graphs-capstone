@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scatterplot Graph</title>
+    <!-- Include Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Scatterplot</h1>
+    <p>Original Image</p>
+    <img src="data:image/jpeg;base64,{{ image_base64 }}" alt="Scatter Plot">
+
+    <!-- Add a container for the Plotly graph -->
+    <div id="scatter-plot"></div>
+
+    <h2>Scatterplot Data</h2>
+    {% if scatter_data_table %}
+        {{ scatter_data_table|safe }}
+    {% else %}
+        <p>No scatter data available.</p>
+    {% endif %}
+
+    <br><br>
+    <a href="/">Back to Homepage</a>
+
+    <script>
+        // Get the scatter data from the HTML template
+        var scatter_data = {{ scatter_data.to_dict(orient="records") | safe }};
+
+        // Extract x and y coordinates from the scatter data
+        var x_data = scatter_data.map(function(item) { return item.x_pred; });
+        var y_data = scatter_data.map(function(item) { return item.y_pred; });
+
+        // Create a Plotly scatter plot
+        var scatter_trace = {
+            x: x_data,
+            y: y_data,
+            mode: 'markers',
+            type: 'scatter',
+            marker: { size: 10 }
+        };
+
+        var layout = {
+            title: '{{ title }}',  // Use the provided title
+            xaxis: { title: '{{ xlabel }}' },  // Use the provided xlabel
+            yaxis: { title: '{{ ylabel }}' }   // Use the provided ylabel
+        };
+
+        var data = [scatter_trace];
+
+        Plotly.newPlot('scatter-plot', data, layout);
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Barplot</title>
+</head>
+<body>
+    <h1>Predicted Graph Type: {{ chart_type }} </h1>
+    
+    <img src="data:image/jpeg;base64,{{ image_base64 }}" alt="Bar Plot">
+    <h2>Enter Information for Barplot</h2>
+    <form action="/bar_graph" method="post">
+        <label for="ymin">ymin:</label>
+        <input type="text" id="ymin" name="ymin" required><br><br>
+        <label for="ymax">ymax:</label>
+        <input type="text" id="ymax" name="ymax" required><br><br>
+        <label for="xtick_labels">x-axis Tick Labels (comma-separated):</label>
+        <input type="text" id="xtick_labels" name="xtick_labels" required><br><br>
+
+        <!-- Add input fields for xlabel, ylabel, and title -->
+        <label for="xlabel">x-axis Label:</label>
+        <input type="text" id="xlabel" name="xlabel"><br><br>
+        <label for="ylabel">y-axis Label:</label>
+        <input type="text" id="ylabel" name="ylabel"><br><br>
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title"><br><br>
+
+        
+        <input type="hidden" name="chart_type" value="{{ chart_type }}">
+        <input type="hidden" name="image_base64" value="{{ image_base64 }}">
+        <input type="submit" value="Submit">
+    </form>
+    {% if bar_data_table %}
+        <h2>Bar Data</h2>
+        {{ bar_data_table|safe }}
+    {% endif %}
+    <br><br>
+    <a href="/">Back to Homepage</a>
+</body>
+</html>
+

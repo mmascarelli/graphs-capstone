@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scatterplot</title>
+</head>
+<body>
+    <h1>Predicted Graph Type: {{ chart_type }}</h1>
+    <img src="data:image/jpeg;base64,{{ image_base64 }}" alt="Scatter Plot">
+
+    <h2>Enter Information for Scatterplot</h2>
+    <form action="/scatter_graph" method="post">
+        <label for="xmin">xmin:</label>
+        <input type="text" id="xmin" name="xmin" required><br><br>
+        <label for="xmax">xmax:</label>
+        <input type="text" id="xmax" name="xmax" required><br><br>
+        <label for="ymin">ymin:</label>
+        <input type="text" id="ymin" name="ymin" required><br><br>
+        <label for="ymax">ymax:</label>
+        <input type="text" id="ymax" name="ymax" required><br><br>
+        
+        <!-- Add input fields for xlabel, ylabel, and title -->
+        <label for="xlabel">x-axis Label:</label>
+        <input type="text" id="xlabel" name="xlabel"><br><br>
+        <label for="ylabel">y-axis Label:</label>
+        <input type="text" id="ylabel" name="ylabel"><br><br>
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title"><br><br>
+
+        <input type="hidden" name="chart_type" value="{{ chart_type }}">
+        <input type="hidden" name="image_base64" value="{{ image_base64 }}">
+        <input type="submit" value="Submit">
+    </form>
+
+    {% if scatter_data_table %}
+        <h2>Scatter Data</h2>
+        {{ scatter_data_table|safe }}
+    {% endif %}
+    <br><br>
+    <a href="/">Back to Homepage</a>
+</body>
+</html>
+
+
