@@ -85,8 +85,8 @@ def rescale_scatter_points(image, points, target_x_min, target_x_max, target_y_m
 
         
     
-    df = pd.DataFrame({'point_pred':scaled_points, 'x_pred':x_scaled,'y_pred':y_scaled})
-    df.sort_values(by='point_pred', ascending=True, inplace=True)
+    df = pd.DataFrame({'x_pred':x_scaled,'y_pred':y_scaled})
+    df.sort_values(by='x_pred', ascending=True, inplace=True)
     df.reset_index(drop=True, inplace=True)
        
     return df
